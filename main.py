@@ -1,4 +1,7 @@
 from mysql.connector import connect, Error
+
+import pandas as pd
+
 from manager import DbManager
 
 import config
@@ -7,24 +10,16 @@ import config
 CONNECTION_DB = config.ConnectionDb()
 
 def func_throw_db(func):
-    try:
-        with connect(
-            host=CONNECTION_DB.HOST,
-            user=CONNECTION_DB.USER,
-            password=CONNECTION_DB.PASSWORD,
-            database=CONNECTION_DB.DATABASE,
-        ) as connection:
-            with connection.cursor() as cursor:
-                # print("hello")
-                manager = DbManager(cursor, connection)
-                func(manager)
-                
-
-    except (Error, Exception) as e:
-        print('error: ', str(e))
+    manager = DbManager()
+    func(manager)
 
 
 def showRecords(records):
+    print("came to show records")
+    html = pd.DataFrame(records).to_html(header=None, index=False, border=2)
+    with open('a.html', 'w') as f:
+        f.write(html)
+
     for record in records:
         for info in record:
             print(info, end = ' ')
@@ -34,12 +29,13 @@ def showRecords(records):
 
 def showUsers(manager):
     print("We know this users:")
-    res = manager.getAllUsers()
+    res, columns = manager.getAllUsers()
     showRecords(res)
+
 
 def showCar(manager, brand, model):
     print(f"Info about {brand} {model}:")
-    res = manager.getCertainCar(brand, model)
+    res, columns = manager.getCertainCar(brand, model)
 
     if len(res) != 1:
         print("WE DID NOT FOUND THIS CAR")
@@ -51,7 +47,7 @@ def showCar(manager, brand, model):
 
 def showTechicalData(manager, brand, model):
     print(f"Techical data about {brand} {model}:")
-    res = manager.getTechicalData(brand, model)
+    res, columns = manager.getTechnicalData(brand, model)
 
     if len(res) != 1:
         print("WE DID NOT FOUND THIS CAR")
@@ -61,14 +57,16 @@ def showTechicalData(manager, brand, model):
         print(info, end = ' ')
     print('\n\n\n')
 
-def showTechicalData(manager, brand, model):
+def showSoldCar(manager, brand, model):
     print(f"Info about Sold {brand} {model}:")
-    res = manager.getGetInfoAboutSoldCars(brand, model)
+    res, columns = manager.getInfoAboutSoldCars(brand, model)
+    # getData = manager.getInfoAboutSoldCars(brand, model)
+    # print(getData)
     showRecords(res)
 
 def showSoldEachBrand(manager):
     print(f"Sales of every model each brand:")
-    res = manager.getSoldEachModelEachBrand()
+    res, columns = manager.getSoldEachModelEachBrand()
     showRecords(res)
 
 def showInfo(manager):
@@ -77,6 +75,7 @@ def showInfo(manager):
     showUsers(manager)
     showCar(manager, brand, model)
     showTechicalData(manager, brand, model)
+    showSoldCar(manager, brand, model)
     showSoldEachBrand(manager)
     
 
