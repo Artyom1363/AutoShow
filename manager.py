@@ -1,24 +1,51 @@
+from mysql.connector import connect, Error
+
+import numpy as np
+
+import config
+
+CONNECTION_DB = config.ConnectionDb()
 
 class DbManager:
-    def __init__(self, cursor, connection):
-        self.cursor = cursor
-        self.connection = connection
 
-    def getAllUsers(self):
+    def throwDb(func):
+        def wrapped(*args, **kwargs):
+            try:
+                with connect(
+                    host=CONNECTION_DB.HOST,
+                    user=CONNECTION_DB.USER,
+                    password=CONNECTION_DB.PASSWORD,
+                    database=CONNECTION_DB.DATABASE,
+                ) as connectionDb:
+                    with connectionDb.cursor() as cursorDb:
+                        return func(cursor = cursorDb, connection = connectionDb, *args, **kwargs)
+                        
+            except (Error, Exception) as e:
+                print('error: ', str(e))
+
+        return wrapped
+
+    @throwDb
+    def getAllUsers(self, cursor, connection):
         getUsersQuery = f"SELECT * FROM Clients;"
-        self.cursor.execute(getUsersQuery)
-        result = self.cursor.fetchall()
-        return result
+        cursor.execute(getUsersQuery)
+        result = cursor.fetchall()
+        columns = self.getColumns("Clients")
+        return result, columns
     
-    def getCertainCar(self, brand, model):
+    @throwDb
+    def getCertainCar(self, brand, model, cursor, connection):
         getCarQuery = f"SELECT * FROM Products " \
                         f"WHERE brand = '{brand}' and model = '{model}';"
-        self.cursor.execute(getCarQuery)
-        result = self.cursor.fetchall()
-        return result
+        cursor.execute(getCarQuery)
+        result = cursor.fetchall()
+        columns = self.getColumns("Products")
+        return result, columns
 
-    def getTechicalData(self, brand, model):
-        result = self.getCertainCar(brand, model)
+
+    @throwDb
+    def getTechnicalData(self, brand, model, cursor, connection):
+        result, columns = self.getCertainCar(brand, model)
 
         if len(result) != 1:
             print("len is : ", len(result))
@@ -26,24 +53,28 @@ class DbManager:
 
         codeProduct = result[0][0]
         getTechnicalDataQuery = f"SELECT * FROM TechnicalData WHERE code_product = '{codeProduct}'"
-        self.cursor.execute(getTechnicalDataQuery)
-        result = self.cursor.fetchall()
-        return result
+        cursor.execute(getTechnicalDataQuery)
+        result = cursor.fetchall()
+        columns = self.getColumns("TechnicalData")
+        return result, columns
 
-    def getGetInfoAboutSoldCars(self, brand, model):
-        res = self.getCertainCar(brand, model)
+    @throwDb
+    def getInfoAboutSoldCars(self, brand, model, cursor, connection):
+        result, columns = self.getCertainCar(brand, model)
 
-        if len(res) != 1:
+        if len(result) != 1:
             print("len is : ", len(result))
             return 0
         
-        codeProduct = res[0][0]
+        codeProduct = result[0][0]
         getSoldInfoQuery = f"SELECT * FROM Orders WHERE code_product = '{codeProduct}'"
-        self.cursor.execute(getSoldInfoQuery)
-        result = self.cursor.fetchall()
-        return result
+        cursor.execute(getSoldInfoQuery)
+        result = cursor.fetchall()
+        columns = self.getColumns("Orders")
+        return result, columns
 
-    def getSoldEachModelEachBrand(self):
+    @throwDb
+    def getSoldEachModelEachBrand(self, cursor, connection):
         getSoldEachBrandQuery = f"SELECT DISTINCT brand AS br, model as model_ev, " \
                                 "(" \
                                     "SELECT count(*) FROM orders WHERE code_product IN " \
@@ -51,6 +82,15 @@ class DbManager:
                                         "SELECT code_product FROM products WHERE model = model_ev" \
                                     ")" \
                                 ") AS QuanOfSold from products;"
-        self.cursor.execute(getSoldEachBrandQuery)
-        result = self.cursor.fetchall()
-        return result
+        cursor.execute(getSoldEachBrandQuery)
+        result = cursor.fetchall()
+        columns = ['Brand', 'Model', 'Quan of Sold']
+        return result, columns
+
+    @throwDb
+    def getColumns(self, table, cursor, connection):
+        getColumnsQuery = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{table}';"
+        cursor.execute(getColumnsQuery)
+        result = cursor.fetchall()
+        np_result = np.array(result)
+        return np_result[:, 0]
