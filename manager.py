@@ -2,7 +2,7 @@ from re import U
 from mysql.connector import connect, Error
 
 import numpy as np
-
+import pandas as pd
 import config
 
 CONNECTION_DB = config.ConnectionDb()
@@ -19,7 +19,7 @@ class DbManager:
                     database=CONNECTION_DB.DATABASE,
                 ) as connectionDb:
                     with connectionDb.cursor() as cursorDb:
-                        return func(cursor = cursorDb, connection = connectionDb, *args, **kwargs)
+                        return func(*args, cursor = cursorDb, connection = connectionDb, **kwargs)
                         
             except (Error, Exception) as e:
                 print('error: ', str(e))
@@ -32,7 +32,8 @@ class DbManager:
         cursor.execute(getUsersQuery)
         result = cursor.fetchall()
         columns = self.getColumns("Clients")
-        return result, columns
+        df = pd.DataFrame(result, columns = columns)
+        return df
     
     @throwDb
     def getCertainCar(self, brand, model, cursor, connection):
@@ -41,7 +42,8 @@ class DbManager:
         cursor.execute(getCarQuery)
         result = cursor.fetchall()
         columns = self.getColumns("Products")
-        return result, columns
+        df = pd.DataFrame(result, columns = columns)
+        return df
 
 
     @throwDb
@@ -57,7 +59,8 @@ class DbManager:
         cursor.execute(getTechnicalDataQuery)
         result = cursor.fetchall()
         columns = self.getColumns("TechnicalData")
-        return result, columns
+        df = pd.DataFrame(result, columns = columns)
+        return df
 
     @throwDb
     def getInfoAboutSoldCars(self, brand, model, cursor, connection):
@@ -72,21 +75,53 @@ class DbManager:
         cursor.execute(getSoldInfoQuery)
         result = cursor.fetchall()
         columns = self.getColumns("Orders")
-        return result, columns
+        df = pd.DataFrame(result, columns = columns)
+        return df
 
     @throwDb
-    def getSoldEachModelEachBrand(self, cursor, connection):
-        getSoldEachBrandQuery = f"SELECT DISTINCT brand AS br, model as model_ev, " \
-                                "(" \
-                                    "SELECT count(*) FROM orders WHERE code_product IN " \
-                                    "(" \
-                                        "SELECT code_product FROM products WHERE model = model_ev" \
-                                    ")" \
-                                ") AS QuanOfSold from products;"
+    def getSoldEachModel(self, cursor, connection):
+        getSoldEachBrandQuery = f"SELECT brand, model, quantity FROM Models " \
+                                "INNER JOIN ( " \
+                                    "SELECT COUNT(id) AS quantity, Specifications.code_product " \
+                                    "FROM Income " \
+                                    "LEFT JOIN Specifications on Specifications.specification_id = Income.specification " \
+                                    "INNER JOIN Orders on Orders.id_income = id " \
+                                    "GROUP BY code_product " \
+                                ") as codes ON models.code_product = codes.code_product;"
         cursor.execute(getSoldEachBrandQuery)
         result = cursor.fetchall()
-        columns = ['Brand', 'Model', 'Quan of Sold']
-        return result, columns
+        columns = ['Марка', 'Модель', 'Кол-во проданных']
+        df = pd.DataFrame(result, columns = columns)
+        return df
+
+
+    @throwDb
+    def getTotalProfit(self, cursor, connection):
+        getTotalProfitQuery =  f"SELECT sum(cost - purchase_cost) AS total_profit FROM ( " \
+	                                "SELECT id, purchase_cost, cost " \
+                                        "FROM Income " \
+                                            "INNER JOIN Orders ON Income.id = Orders.id_income " \
+                                ") AS income_join_completed;"
+        cursor.execute(getTotalProfitQuery)
+        result = cursor.fetchall()
+        columns = ['Total_profit',]
+        df = pd.DataFrame(result, columns = columns)
+        return df
+
+    @throwDb
+    def getAvailableCars(self, cursor, connection):
+        getAvailableCarsQuery =  f"SELECT Models.brand, Models.model, specifications.engine_capacity, specifications.number_of_seats FROM income " \
+                                "LEFT JOIN specifications ON specifications.specification_id = income.specification " \
+                                "LEFT JOIN Models ON Models.code_product = specifications.code_product " \
+                                "WHERE income.id NOT IN " \
+                                "( " \
+                                    "SELECT id_income FROM orders " \
+                                ");"
+        cursor.execute(getAvailableCarsQuery)
+        result = cursor.fetchall()
+        columns = ['Марка', 'Модель', 'Объем двигателя', 'Кол-во мест']
+        df = pd.DataFrame(result, columns = columns)
+        return df
 
     @throwDb
     def getColumns(self, table, cursor, connection):
@@ -95,6 +130,8 @@ class DbManager:
         result = cursor.fetchall()
         np_result = np.array(result)
         return np_result[:, 0]
+
+
 
 
 

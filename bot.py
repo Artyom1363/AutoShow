@@ -1,3 +1,4 @@
+from sqlite3 import dbapi2
 import telebot
 
 import config
@@ -12,11 +13,13 @@ bot = telebot.TeleBot(config.TOKEN)
 
 
 menu = "Press"\
-        "\n/soldModels to show all sold models" \
-        "\n/users to get info about users" \
-        "\n/soldCars to get info about sold cars" \
-        "\n/technicalData to get technical info certain car" \
-        "\n/carInfo to get info about certain car"
+        "\n/SoldModels to show all sold models" \
+        "\n/TotalProfit to show total profit of organization" \
+        "\n/Users to get info about users" \
+        "\n/AvailableCars to get info about users" \
+        "\n/SoldCars to get info about sold cars" \
+        "\n/TechnicalData to get technical info certain car" \
+        "\n/CarInfo to get info about certain car"
 
 
 
@@ -28,51 +31,66 @@ def start(message):
     bot.SendMessage(menu)
     
 
-
-@bot.message_handler(commands=['soldModels'])
-def soldModels(message):
+@bot.message_handler(commands=['TotalProfit'])
+def totalProfit(message):
     model = Model()
-    link = model.GetSoldEachModelEachBrand(typeForAns='saveAsHtml')
+    link = model.GetTotalProfit()
     bot = TelegramBotSender(message.chat.id)
     bot.SendDocument(link)
     # bot.send_document(message.chat.id, open(link, 'rb'))
 
 
-@bot.message_handler(commands=['users'])
+@bot.message_handler(commands=['SoldModels'])
 def soldModels(message):
     model = Model()
-    link = model.GetUsersInfo(typeForAns='saveAsHtml')
+    link = model.GetSoldEachModel()
+    bot = TelegramBotSender(message.chat.id)
+    bot.SendDocument(link)
+    # bot.send_document(message.chat.id, open(link, 'rb'))
+
+
+@bot.message_handler(commands=['Users'])
+def soldModels(message):
+    model = Model()
+    link = model.GetUsersInfo()
     bot = TelegramBotSender(message.chat.id)
     bot.SendDocument(link)
 
+@bot.message_handler(commands=['AvailableCars'])
+def totalProfit(message):
+    model = Model()
+    link = model.GetAvailableCars()
+    bot = TelegramBotSender(message.chat.id)
+    bot.SendDocument(link)
+    # bot.send_document(message.chat.id, open(link, 'rb'))
 
-@bot.message_handler(commands=['soldCars'])
+@bot.message_handler(commands=['SoldCars'])
 def soldModels(message):
     messageHandler = MessageHadler()
     messageHandler.HandleCommand(message.chat.id, 'soldCars')
     # model = Model()
-    # link = model.GetInfoAboutSoldCars(brand = 'toyota', model = 'rav 4', typeForAns='saveAsHtml')
+    # link = model.GetInfoAboutSoldCars(brand = 'toyota', model = 'rav 4')
     # bot = TelegramBotSender(message.chat.id)
     # bot.SendDocument(link)
 
 
-@bot.message_handler(commands=['technicalData'])
+@bot.message_handler(commands=['TechnicalData'])
 def soldModels(message):
     messageHandler = MessageHadler()
     messageHandler.HandleCommand(message.chat.id, 'technicalData')
 
     # model = Model()
-    # link = model.GetTechnicalData(brand = 'toyota', model = 'rav 4', typeForAns='saveAsHtml')
+    # link = model.GetTechnicalData(brand = 'toyota', model = 'rav 4')
     # bot = TelegramBotSender(message.chat.id)
     # bot.SendDocument(link)
 
 
-@bot.message_handler(commands=['carInfo'])
+@bot.message_handler(commands=['CarInfo'])
 def soldModels(message):
     messageHandler = MessageHadler()
     messageHandler.HandleCommand(message.chat.id, 'carInfo')
     # model = Model()
-    # link = model.GetCertainCar(brand = 'toyota', model = 'rav 4', typeForAns='saveAsHtml')
+    # link = model.GetCertainCar(brand = 'toyota', model = 'rav 4')
     # bot = TelegramBotSender(message.chat.id)
     # bot.SendDocument(link)
 

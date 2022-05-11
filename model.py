@@ -1,9 +1,10 @@
 from mysql.connector import connect, Error
 import pandas as pd
 from manager import DbManager, TelegramUsersHandler
-import config
+import pdfkit as pdf
 from sender import TelegramBotSender
 import json
+from html_settings import HTML_STRING
 
 
 class Model:
@@ -17,51 +18,79 @@ class Model:
 
         return good
 
-    def GetSoldEachModelEachBrand(self, typeForAns = 'saveAsHtml'):
-        manager = DbManager()
-        res, resColumns = manager.getSoldEachModelEachBrand()
+    def saveDfAsPdf(self, df, pdfFileName):
+        # html = df.to_html(index=False, border=1, encoding='utf-8')
+        html_string = HTML_STRING.format(table_data_frame=df.to_html(index=False, border=1))
+        pdf.from_string(html_string, pdfFileName)
+        return pdfFileName
+        # pdf.from_file(htmlFileName, pdfFileName)
 
-        if typeForAns == 'saveAsHtml':
-            fileName = 'SoldModels.html'
-            self.saveAsHtml(res, resColumns, fileName)
+
+    def GetSoldEachModel(self, typeForAns = 'saveAsPdf'):
+        manager = DbManager()
+        df = manager.getSoldEachModel()
+
+        if typeForAns == 'saveAsPdf':
+            fileName = 'SoldModels.pdf'
+            self.saveDfAsPdf(df, fileName)
             return fileName
 
-    def GetUsersInfo(self, typeForAns = 'saveAsHtml'):
-        manager = DbManager()
-        res, resColumns = manager.getAllUsers()
 
-        if typeForAns == 'saveAsHtml':
-            fileName = 'Users.html'
-            self.saveAsHtml(res, resColumns, fileName)
+    def GetAvailableCars(self, typeForAns = 'saveAsPdf'):
+        manager = DbManager()
+        df = manager.getAvailableCars()
+
+        if typeForAns == 'saveAsPdf':
+            fileName = 'AvailableCars.pdf'
+            self.saveDfAsPdf(df, fileName)
             return fileName
 
 
-    def GetInfoAboutSoldCars(self, brand, model, typeForAns = 'saveAsHtml'):
+    def GetUsersInfo(self, typeForAns = 'saveAsPdf'):
         manager = DbManager()
-        res, resColumns = manager.getInfoAboutSoldCars(brand, model)
+        df = manager.getAllUsers()
 
-        if typeForAns == 'saveAsHtml':
-            fileName = 'SoldCars.html'
-            self.saveAsHtml(res, resColumns, fileName)
+        if typeForAns == 'saveAsPdf':
+            fileName = 'Users.pdf'
+            self.saveDfAsPdf(df, fileName)
             return fileName
 
-    def GetTechnicalData(self, brand, model, typeForAns = 'saveAsHtml'):
+    def GetTotalProfit(self, typeForAns = 'saveAsPdf'):
         manager = DbManager()
-        res, resColumns = manager.getTechnicalData(brand, model)
+        df = manager.getTotalProfit()
 
-        if typeForAns == 'saveAsHtml':
-            fileName = 'technicalData.html'
-            self.saveAsHtml(res, resColumns, fileName)
+        if typeForAns == 'saveAsPdf':
+            fileName = 'saveAsPdf.pdf'
+            self.saveDfAsPdf(df, fileName)
             return fileName
 
-    def GetCertainCar(self, brand, model, typeForAns = 'saveAsHtml'):
+    def GetInfoAboutSoldCars(self, brand, model, typeForAns = 'saveAsPdf'):
         manager = DbManager()
-        res, resColumns = manager.getCertainCar(brand, model)
+        df = manager.getInfoAboutSoldCars(brand, model)
 
-        if typeForAns == 'saveAsHtml':
-            fileName = 'carInfo.html'
-            self.saveAsHtml(res, resColumns, fileName)
+        if typeForAns == 'saveAsPdf':
+            fileName = 'SoldCars.pdf'
+            self.saveDfAsPdf(df, fileName)
             return fileName
+
+    def GetTechnicalData(self, brand, model, typeForAns = 'saveAsPdf'):
+        manager = DbManager()
+        df = manager.getTechnicalData(brand, model)
+
+        if typeForAns == 'saveAsPdf':
+            fileName = 'Specifications.pdf'
+            self.saveDfAsPdf(df, fileName)
+            return fileName
+
+    def GetCertainCar(self, brand, model, typeForAns = 'saveAsPdf'):
+        manager = DbManager()
+        df = manager.getCertainCar(brand, model)
+
+        if typeForAns == 'saveAsPdf':
+            fileName = 'CarInfo.pdf'
+            self.saveDfAsPdf(df, fileName)
+            return fileName
+
 
 class MessageHadler:
     def __init__(self, user_id = 0):
@@ -110,7 +139,7 @@ class MessageHadler:
         oldMessageToUser = self.messages[targetOperation][stepNumber]
 
         jsonData = json.loads(ans['json_data'])
-        jsonData[self.fields[oldMessageToUser]] = message
+        jsonData[self.fields[oldMessageToUser]] = message.lower()
         jsonDataStr = json.dumps(jsonData)
         self.tgDb.UpdateOperation(user_id, targetOperation, stepNumber + 1, jsonDataStr)
         
