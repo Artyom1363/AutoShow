@@ -8,6 +8,8 @@ from html_settings import HTML_STRING
 
 
 class Model:
+    def __init__(self):
+        self.outDir = 'output'
 
     def saveAsHtml(self, result, columns, fileName):
         html = pd.DataFrame(result, columns = columns).to_html(index=False, border=1)
@@ -19,11 +21,19 @@ class Model:
         return good
 
     def saveDfAsPdf(self, df, pdfFileName):
-        # html = df.to_html(index=False, border=1, encoding='utf-8')
         html_string = HTML_STRING.format(table_data_frame=df.to_html(index=False, border=1))
         pdf.from_string(html_string, pdfFileName)
         return pdfFileName
-        # pdf.from_file(htmlFileName, pdfFileName)
+
+
+    def GetTotalProfit(self, typeForAns = 'saveAsPdf'):
+        manager = DbManager()
+        df = manager.getTotalProfit()
+
+        if typeForAns == 'saveAsPdf':
+            filePath = self.outDir + '/' + 'TotalProfit.pdf'
+            self.saveDfAsPdf(df, filePath)
+            return filePath
 
 
     def GetSoldEachModel(self, typeForAns = 'saveAsPdf'):
@@ -31,9 +41,9 @@ class Model:
         df = manager.getSoldEachModel()
 
         if typeForAns == 'saveAsPdf':
-            fileName = 'SoldModels.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
+            filePath = self.outDir + '/' + 'SoldModels.pdf'
+            self.saveDfAsPdf(df, filePath)
+            return filePath
 
 
     def GetAvailableCars(self, typeForAns = 'saveAsPdf'):
@@ -41,56 +51,32 @@ class Model:
         df = manager.getAvailableCars()
 
         if typeForAns == 'saveAsPdf':
-            fileName = 'AvailableCars.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
+            filePath = self.outDir + '/' + 'AvailableCars.pdf'
+            self.saveDfAsPdf(df, filePath)
+            return filePath
 
 
-    def GetUsersInfo(self, typeForAns = 'saveAsPdf'):
+    def GetMostProfitableCars(self, typeForAns = 'saveAsPdf'):
         manager = DbManager()
-        df = manager.getAllUsers()
+        df = manager.getMostProfitableCars()
 
         if typeForAns == 'saveAsPdf':
-            fileName = 'Users.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
+            filePath = self.outDir + '/' + 'MostProfitable.pdf'
+            self.saveDfAsPdf(df, filePath)
+            return filePath
 
-    def GetTotalProfit(self, typeForAns = 'saveAsPdf'):
+
+    def GetBiggestCars(self, typeForAns = 'saveAsPdf'):
         manager = DbManager()
-        df = manager.getTotalProfit()
+        df = manager.getBiggestCars()
 
         if typeForAns == 'saveAsPdf':
-            fileName = 'saveAsPdf.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
+            filePath = self.outDir + '/' + 'Biggest.pdf'
+            self.saveDfAsPdf(df, filePath)
+            return filePath
 
-    def GetInfoAboutSoldCars(self, brand, model, typeForAns = 'saveAsPdf'):
-        manager = DbManager()
-        df = manager.getInfoAboutSoldCars(brand, model)
 
-        if typeForAns == 'saveAsPdf':
-            fileName = 'SoldCars.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
-
-    def GetTechnicalData(self, brand, model, typeForAns = 'saveAsPdf'):
-        manager = DbManager()
-        df = manager.getTechnicalData(brand, model)
-
-        if typeForAns == 'saveAsPdf':
-            fileName = 'Specifications.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
-
-    def GetCertainCar(self, brand, model, typeForAns = 'saveAsPdf'):
-        manager = DbManager()
-        df = manager.getCertainCar(brand, model)
-
-        if typeForAns == 'saveAsPdf':
-            fileName = 'CarInfo.pdf'
-            self.saveDfAsPdf(df, fileName)
-            return fileName
-
+    
 
 class MessageHadler:
     def __init__(self, user_id = 0):

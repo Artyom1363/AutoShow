@@ -198,16 +198,14 @@ class DbManager:
 
 
 manager = DbManager()
-# for i in range(1000):
-#     manager.insertClients()
+for i in range(1000):
+    manager.insertClients()
 
-# for i in range(1000):
-#     manager.insertApplications()
+for i in range(1000):
+    manager.insertApplications()
 
 for i in range(100000):
     manager.insertIncome()
 
-# print(genDate())
-arr = manager.insertOrders()
-# print("arr: ", arr)
-# print(type(arr[0]))
+for i in range(1000):
+    manager.insertOrders()

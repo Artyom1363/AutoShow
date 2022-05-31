@@ -12,14 +12,12 @@ from sender import TelegramBotSender
 bot = telebot.TeleBot(config.TOKEN)
 
 
-menu = "Press"\
-        "\n/SoldModels to show all sold models" \
-        "\n/TotalProfit to show total profit of organization" \
-        "\n/Users to get info about users" \
-        "\n/AvailableCars to get info about users" \
-        "\n/SoldCars to get info about sold cars" \
-        "\n/TechnicalData to get technical info certain car" \
-        "\n/CarInfo to get info about certain car"
+menu = "Press" \
+        "\n/TotalProfit суммарная прибыль предприятия" \
+        "\n/SoldModels кол-во проданных автомобилей каждой марки" \
+        "\n/AvailableCars автомобили в наличии+ошидаемые автосалоном" \
+        "\n/MostProfitable топ 3 автомобиля принесших самую большую прибыль" \
+        "\n/Biggest самый большие (по кол-ву мест) автомобили в наличии"
 
 
 
@@ -49,50 +47,29 @@ def soldModels(message):
     # bot.send_document(message.chat.id, open(link, 'rb'))
 
 
-@bot.message_handler(commands=['Users'])
-def soldModels(message):
-    model = Model()
-    link = model.GetUsersInfo()
-    bot = TelegramBotSender(message.chat.id)
-    bot.SendDocument(link)
-
 @bot.message_handler(commands=['AvailableCars'])
-def totalProfit(message):
+def availableCars(message):
     model = Model()
     link = model.GetAvailableCars()
     bot = TelegramBotSender(message.chat.id)
     bot.SendDocument(link)
-    # bot.send_document(message.chat.id, open(link, 'rb'))
-
-@bot.message_handler(commands=['SoldCars'])
-def soldModels(message):
-    messageHandler = MessageHadler()
-    messageHandler.HandleCommand(message.chat.id, 'soldCars')
-    # model = Model()
-    # link = model.GetInfoAboutSoldCars(brand = 'toyota', model = 'rav 4')
-    # bot = TelegramBotSender(message.chat.id)
-    # bot.SendDocument(link)
 
 
-@bot.message_handler(commands=['TechnicalData'])
-def soldModels(message):
-    messageHandler = MessageHadler()
-    messageHandler.HandleCommand(message.chat.id, 'technicalData')
-
-    # model = Model()
-    # link = model.GetTechnicalData(brand = 'toyota', model = 'rav 4')
-    # bot = TelegramBotSender(message.chat.id)
-    # bot.SendDocument(link)
+@bot.message_handler(commands=['MostProfitable'])
+def mostProfitableCars(message):
+    model = Model()
+    link = model.GetMostProfitableCars()
+    bot = TelegramBotSender(message.chat.id)
+    bot.SendDocument(link)
 
 
-@bot.message_handler(commands=['CarInfo'])
-def soldModels(message):
-    messageHandler = MessageHadler()
-    messageHandler.HandleCommand(message.chat.id, 'carInfo')
-    # model = Model()
-    # link = model.GetCertainCar(brand = 'toyota', model = 'rav 4')
-    # bot = TelegramBotSender(message.chat.id)
-    # bot.SendDocument(link)
+@bot.message_handler(commands=['Biggest'])
+def biggestCars(message):
+    model = Model()
+    link = model.GetBiggestCars()
+    bot = TelegramBotSender(message.chat.id)
+    bot.SendDocument(link)
+
 
 
 
@@ -108,7 +85,7 @@ def text_handler(message):
 
 while True:
     # try:
-        bot.polling(none_stop=True)
+    bot.polling(none_stop=True)
     # except Exception as ex:
     #     print('error in bot.polling: ' + str(ex))
     #     exit(0)

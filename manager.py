@@ -34,49 +34,21 @@ class DbManager:
         columns = self.getColumns("Clients")
         df = pd.DataFrame(result, columns = columns)
         return df
-    
-    @throwDb
-    def getCertainCar(self, brand, model, cursor, connection):
-        getCarQuery = f"SELECT * FROM Products " \
-                        f"WHERE brand = '{brand}' and model = '{model}';"
-        cursor.execute(getCarQuery)
-        result = cursor.fetchall()
-        columns = self.getColumns("Products")
-        df = pd.DataFrame(result, columns = columns)
-        return df
 
 
     @throwDb
-    def getTechnicalData(self, brand, model, cursor, connection):
-        result, columns = self.getCertainCar(brand, model)
-
-        if len(result) != 1:
-            print("len is : ", len(result))
-            return 0
-
-        codeProduct = result[0][0]
-        getTechnicalDataQuery = f"SELECT * FROM TechnicalData WHERE code_product = '{codeProduct}'"
-        cursor.execute(getTechnicalDataQuery)
+    def getTotalProfit(self, cursor, connection):
+        getTotalProfitQuery =  f"SELECT sum(cost - purchase_cost) AS total_profit FROM ( " \
+	                                "SELECT id, purchase_cost, cost " \
+                                        "FROM Income " \
+                                            "INNER JOIN Orders ON Income.id = Orders.id_income " \
+                                ") AS income_join_completed;"
+        cursor.execute(getTotalProfitQuery)
         result = cursor.fetchall()
-        columns = self.getColumns("TechnicalData")
+        columns = ['Суммарная прибыль',]
         df = pd.DataFrame(result, columns = columns)
         return df
 
-    @throwDb
-    def getInfoAboutSoldCars(self, brand, model, cursor, connection):
-        result, columns = self.getCertainCar(brand, model)
-
-        if len(result) != 1:
-            print("len is : ", len(result))
-            return 0
-        
-        codeProduct = result[0][0]
-        getSoldInfoQuery = f"SELECT * FROM Orders WHERE code_product = '{codeProduct}'"
-        cursor.execute(getSoldInfoQuery)
-        result = cursor.fetchall()
-        columns = self.getColumns("Orders")
-        df = pd.DataFrame(result, columns = columns)
-        return df
 
     @throwDb
     def getSoldEachModel(self, cursor, connection):
@@ -94,32 +66,50 @@ class DbManager:
         df = pd.DataFrame(result, columns = columns)
         return df
 
-
-    @throwDb
-    def getTotalProfit(self, cursor, connection):
-        getTotalProfitQuery =  f"SELECT sum(cost - purchase_cost) AS total_profit FROM ( " \
-	                                "SELECT id, purchase_cost, cost " \
-                                        "FROM Income " \
-                                            "INNER JOIN Orders ON Income.id = Orders.id_income " \
-                                ") AS income_join_completed;"
-        cursor.execute(getTotalProfitQuery)
-        result = cursor.fetchall()
-        columns = ['Total_profit',]
-        df = pd.DataFrame(result, columns = columns)
-        return df
-
     @throwDb
     def getAvailableCars(self, cursor, connection):
-        getAvailableCarsQuery =  f"SELECT Models.brand, Models.model, specifications.engine_capacity, specifications.number_of_seats FROM income " \
+        getAvailableCarsQuery =  f"SELECT Models.brand, Models.model, specifications.engine_capacity, specifications.number_of_seats, count(Models.model) as quan FROM income " \
                                 "LEFT JOIN specifications ON specifications.specification_id = income.specification " \
                                 "LEFT JOIN Models ON Models.code_product = specifications.code_product " \
                                 "WHERE income.id NOT IN " \
                                 "( " \
                                     "SELECT id_income FROM orders " \
-                                ");"
+                                ") " \
+                                "GROUP BY Models.brand, Models.model, specifications.engine_capacity, specifications.number_of_seats;"
+
         cursor.execute(getAvailableCarsQuery)
         result = cursor.fetchall()
-        columns = ['Марка', 'Модель', 'Объем двигателя', 'Кол-во мест']
+        columns = ['Марка', 'Модель', 'Объем двигателя', 'Кол-во мест', 'Кол-во автомобилей']
+        df = pd.DataFrame(result, columns = columns)
+        return df
+
+    @throwDb
+    def getMostProfitableCars(self, cursor, connection):
+        getMostProfitableCarsQuery =   f"SELECT Models.brand, Models.model, sum(cost - purchase_cost) AS profit, count(specification) as SoldCount " \
+                                    "FROM Income " \
+                                        "INNER JOIN Orders ON Income.id = Orders.id_income " \
+                                        "LEFT JOIN Specifications ON Specifications.specification_id = Income.specification " \
+                                        "LEFT JOIN Models ON Specifications.code_product = Models.code_product " \
+                                    "GROUP BY specification LIMIT 3;"
+        cursor.execute(getMostProfitableCarsQuery)
+        result = cursor.fetchall()
+        columns = ['Марка', 'Модель', 'Прибыль от автомобиля', 'Кол-во проданных экземпляров']
+        df = pd.DataFrame(result, columns = columns)
+        return df
+
+    @throwDb
+    def getBiggestCars(self, cursor, connection):
+        getBiggestCarsQuery = f"SELECT DISTINCT Models.brand, Models.model, specifications.number_of_seats FROM income " \
+                                "LEFT JOIN specifications ON specifications.specification_id = income.specification " \
+                                "LEFT JOIN Models ON Models.code_product = specifications.code_product " \
+                                "WHERE income.id NOT IN " \
+                                "( " \
+                                    "SELECT id_income FROM orders " \
+                                ") AND Income.received = 1 " \
+                                "ORDER BY specifications.number_of_seats DESC;"
+        cursor.execute(getBiggestCarsQuery)
+        result = cursor.fetchall()
+        columns = ['Марка', 'Модель', 'Кол-во мест']
         df = pd.DataFrame(result, columns = columns)
         return df
 
